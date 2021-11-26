@@ -78,6 +78,7 @@ True          SumPrint     - Print summary data to <RootName>.IfW.sum (flag)
 END of input file (the word "END" must appear in the first 3 columns of this last OutList line)
 ---------------------------------------------------------------------------------------"""
 
+
 def to_InflowWind(ds, outdir='.', prefix=''):
     """Write out Binary HAWC-Style Full-Field Files
 
@@ -99,15 +100,15 @@ def to_InflowWind(ds, outdir='.', prefix=''):
     (x is streamwise, z is up) and with variables 'u','v', and 'w' corresponding
     to the velocity components.
     """
-    dims = ['t','y','z']
+    dims = ['t', 'y', 'z']
     ds = ds.sortby(dims).transpose(*dims)
     Nt = ds.dims['t']
     Ny = ds.dims['y']
     Nz = ds.dims['z']
     fmtstr = '{:d}f'.format(Nz)
-    for varname in ['u','v','w']:
+    for varname in ['u', 'v', 'w']:
         fpath = os.path.join(outdir, prefix+varname+'.bin')
-        with open(fpath,'wb') as f:
+        with open(fpath, 'wb') as f:
             data = ds[varname].values
             # file format (from InflowWind manual):
             #
@@ -125,6 +126,5 @@ def to_InflowWind(ds, outdir='.', prefix=''):
             # first inflow timestep.
             for i in range(Nt):
                 for j in range(Ny)[::-1]:
-                    f.write(struct.pack(fmtstr, *data[i,j,:]))
-        print('Wrote',fpath)
-
+                    f.write(struct.pack(fmtstr, *data[i, j, :]))
+        print('Wrote', fpath)

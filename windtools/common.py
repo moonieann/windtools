@@ -14,7 +14,7 @@ import pandas as pd
 import xarray as xr
 
 
-def calc_wind(df=None,u='u',v='v'):
+def calc_wind(df=None, u='u', v='v'):
     """Calculate wind speed and direction from horizontal velocity
     components, u and v.
 
@@ -30,13 +30,13 @@ def calc_wind(df=None,u='u',v='v'):
     """
     if df is None:
         assert (u is not None) and (v is not None)
-    elif isinstance(df,pd.DataFrame):
-        assert all(velcomp in df.columns for velcomp in [u,v]), \
+    elif isinstance(df, pd.DataFrame):
+        assert all(velcomp in df.columns for velcomp in [u, v]), \
                 'velocity components u/v not found; set u and/or v'
         u = df[u]
         v = df[v]
-    elif isinstance(df,xr.Dataset):
-        assert all(velcomp in df.variables for velcomp in [u,v]), \
+    elif isinstance(df, xr.Dataset):
+        assert all(velcomp in df.variables for velcomp in [u, v]), \
                 'velocity components u/v not found; set u and/or v'
         u = df[u]
         v = df[v]
@@ -44,7 +44,8 @@ def calc_wind(df=None,u='u',v='v'):
     wdir = 180. + np.degrees(np.arctan2(u, v))
     return wspd, wdir
 
-def calc_uv(df=None,wspd='wspd',wdir='wdir'):
+
+def calc_uv(df=None, wspd='wspd', wdir='wdir'):
     """Calculate velocity components from wind speed and direction.
 
     Parameters
@@ -59,22 +60,23 @@ def calc_uv(df=None,wspd='wspd',wdir='wdir'):
     """
     if df is None:
         assert (wspd is not None) and (wdir is not None)
-    elif isinstance(df,pd.DataFrame):
-        assert all(windcomp in df.columns for windcomp in [wspd,wdir]), \
+    elif isinstance(df, pd.DataFrame):
+        assert all(windcomp in df.columns for windcomp in [wspd, wdir]), \
                    'wind speed/direction not found; set wspd and/or wdir'
         wspd = df[wspd]
         wdir = df[wdir]
-    elif isinstance(df,xr.Dataset):
-        assert all(windcomp in df.variables for windcomp in [wspd,wdir]), \
+    elif isinstance(df, xr.Dataset):
+        assert all(windcomp in df.variables for windcomp in [wspd, wdir]), \
                    'wind speed/direction not found; set wspd and/or wdir'
         wspd = df[wspd]
         wdir = df[wdir]
     ang = np.radians(270. - wdir)
     u = wspd * np.cos(ang)
     v = wspd * np.sin(ang)
-    return u,v
+    return u, v
 
-def fit_powerlaw(df=None,z=None,U=None,zref=80.0,Uref=None):
+
+def fit_powerlaw(df=None, z=None, U=None, zref=80.0, Uref=None):
     """Calculate power-law exponent to estimate shear.
 
     Parameters
@@ -103,7 +105,7 @@ def fit_powerlaw(df=None,z=None,U=None,zref=80.0,Uref=None):
     if df is None:
         assert (U is not None) and (z is not None)
         df = pd.DataFrame(U, index=z)
-    elif isinstance(df,pd.Series):
+    elif isinstance(df, pd.Series):
         df = pd.DataFrame(df)
     # make sure we're only working with above-ground values
     df = df.loc[df.index > 0]
@@ -113,15 +115,16 @@ def fit_powerlaw(df=None,z=None,U=None,zref=80.0,Uref=None):
     if Uref is None:
         Uref = df.loc[zref]
     elif not hasattr(Uref, '__iter__'):
-        Uref = pd.Series(Uref,index=df.columns)
+        Uref = pd.Series(Uref, index=df.columns)
     # calculate shear coefficient
     alpha = pd.Series(index=df.columns)
     R2 = pd.Series(index=df.columns)
-    def fun(x,*popt):
+
+    def fun(x, *popt):
         return popt[0]*x
-    for col,U in df.iteritems():
+    for col, U in df.iteritems():
         logU = np.log(U) - np.log(Uref[col])
-        popt, pcov = curve_fit(fun,xdata=logz,ydata=logU,p0=0.14,bounds=(0,1))
+        popt, pcov = curve_fit(fun, xdata=logz, ydata=logU, p0=0.14, bounds=(0, 1))
         alpha[col] = popt[0]
         U = df[col]
         resid = U - Uref[col]*(z/zref)**alpha[col]
@@ -131,7 +134,7 @@ def fit_powerlaw(df=None,z=None,U=None,zref=80.0,Uref=None):
     return alpha.squeeze(), R2.squeeze()
 
 
-def covariance(a,b,interval='10min',resample=False,**kwargs):
+def covariance(a, b, interval='10min', resample=False, **kwargs):
     """Calculate covariance between two series (with datetime index) in
     the specified interval, where the interval is defined by a pandas
     offset string
@@ -164,8 +167,8 @@ def covariance(a,b,interval='10min',resample=False,**kwargs):
         assert len(a.index.levels) == 2
         assert len(b.index.levels) == 2
         # assuming levels 0 and 1 are time and height, respectively
-        a = a.unstack() # create unstacked copy
-        b = b.unstack() # create unstacked copy
+        a = a.unstack()                # create unstacked copy
+        b = b.unstack()                # create unstacked copy
         have_multiindex = True
     elif isinstance(b.index, pd.MultiIndex):
         raise AssertionError('Both a and b should have multiindices')
@@ -178,11 +181,11 @@ def covariance(a,b,interval='10min',resample=False,**kwargs):
     if resample:
         a_mean = a.resample(interval).mean()
         b_mean = b.resample(interval).mean()
-        ab_mean = (a*b).resample(interval,**kwargs).mean()
+        ab_mean = (a*b).resample(interval, **kwargs).mean()
     else:
         a_mean = a.rolling(interval).mean()
         b_mean = b.rolling(interval).mean()
-        ab_mean = (a*b).rolling(interval,**kwargs).mean()
+        ab_mean = (a*b).rolling(interval, **kwargs).mean()
     cov = ab_mean - a_mean*b_mean
     if have_multiindex:
         return cov.stack()

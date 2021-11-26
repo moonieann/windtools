@@ -13,7 +13,7 @@ import sys,os
 import time
 import numpy as np
 
-from .general import InflowPlane
+from general import InflowPlane
 from windtools.io.binary import BinaryFile
 
 
